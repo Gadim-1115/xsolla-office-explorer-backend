@@ -6,9 +6,9 @@ services:
     container_name: xsolla_explorer_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: xsolla
-      POSTGRES_PASSWORD: xsolla_secret
-      POSTGRES_DB: office_explorer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "12345"
+      POSTGRES_DB: xsolla_explorer
     ports:
       - "5432:5432"
     volumes:

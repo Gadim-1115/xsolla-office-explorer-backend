@@ -1,11 +1,6 @@
--- Clear existing seed data before inserting updated records
 TRUNCATE TABLE user_progress, hotspots, quests, zones CASCADE;
 
--- ==========================================
--- 1. SEED ZONES (Strictly matching latest Xsolla.svg IDs)
--- ==========================================
 INSERT INTO zones (id, name, is_locked_default, difficulty, media_url, description) VALUES
-    -- Game Room Sectors (1 = Easy -> 4 = Hard)
     (
         'zone_gameroom_1',
         'Game Room — Sector 1 (Board Games)',
@@ -38,8 +33,6 @@ INSERT INTO zones (id, name, is_locked_default, difficulty, media_url, descripti
         '/assets/rooms/gameroom_sector_4.jpg',
         'PlayStation console gaming zone.'
     ),
-
-    -- 11 Meeting Rooms (zone_meeting_1 .. zone_meeting_11)
     (
         'zone_meeting_1',
         'Meeting Room 1',
@@ -51,24 +44,24 @@ INSERT INTO zones (id, name, is_locked_default, difficulty, media_url, descripti
     (
         'zone_meeting_2',
         'Meeting Room 2',
-        TRUE,
-        'EASY',
+        FALSE,
+        NULL,
         '/assets/rooms/meeting_2.jpg',
         'Meeting room for team syncs and calls. Book via calendar before use.'
     ),
     (
         'zone_meeting_3',
         'Meeting Room 3',
-        TRUE,
-        'MEDIUM',
+        FALSE,
+        NULL,
         '/assets/rooms/meeting_3.jpg',
         'Meeting room for team syncs and calls. Book via calendar before use.'
     ),
     (
         'zone_meeting_4',
         'Meeting Room 4',
-        TRUE,
-        'MEDIUM',
+        FALSE,
+        NULL,
         '/assets/rooms/meeting_4.jpg',
         'Meeting room for team syncs and calls. Book via calendar before use.'
     ),
@@ -83,24 +76,24 @@ INSERT INTO zones (id, name, is_locked_default, difficulty, media_url, descripti
     (
         'zone_meeting_6',
         'Meeting Room 6',
-        TRUE,
-        'MEDIUM',
+        FALSE,
+        NULL,
         '/assets/rooms/meeting_6.jpg',
         'Meeting room for team syncs and calls. Book via calendar before use.'
     ),
     (
         'zone_meeting_7',
         'Meeting Room 7',
-        TRUE,
-        'EASY',
+        FALSE,
+        NULL,
         '/assets/rooms/meeting_7.jpg',
         'Meeting room for team syncs and calls. Book via calendar before use.'
     ),
     (
         'zone_meeting_8',
         'Meeting Room 8',
-        TRUE,
-        'MEDIUM',
+        FALSE,
+        NULL,
         '/assets/rooms/meeting_8.jpg',
         'Meeting room for team syncs and calls. Book via calendar before use.'
     ),
@@ -108,28 +101,26 @@ INSERT INTO zones (id, name, is_locked_default, difficulty, media_url, descripti
         'zone_meeting_9',
         'Meeting Room 9',
         TRUE,
-        'MEDIUM',
+        'EASY',
         '/assets/rooms/meeting_9.jpg',
-        'Presentation meeting room equipped with a projector. Book via calendar before use.'
+        'Presentation meeting room equipped with a projector.'
     ),
     (
         'zone_meeting_10',
         'Meeting Room 10',
-        TRUE,
-        'MEDIUM',
+        FALSE,
+        NULL,
         '/assets/rooms/meeting_10.jpg',
-        'Presentation meeting room equipped with a projector. Book via calendar before use.'
+        'Presentation meeting room equipped with a projector.'
     ),
     (
         'zone_meeting_11',
         'Meeting Room 11',
-        TRUE,
-        'EASY',
+        FALSE,
+        NULL,
         '/assets/rooms/meeting_11.jpg',
         'Meeting room for team syncs and calls. Book via calendar before use.'
     ),
-
-    -- Unlocked Zones (Open Spaces, Session Hall, Kitchen, Stock)
     (
         'zone_lecturezone_open_space_1',
         'Open Space 1 (Xsolla School Students)',
@@ -171,11 +162,7 @@ INSERT INTO zones (id, name, is_locked_default, difficulty, media_url, descripti
         'Office storage and equipment supply room.'
     );
 
--- ==========================================
--- 2. SEED ALGORITHMIC QUESTS (1:1 with Locked Zones)
--- ==========================================
 INSERT INTO quests (zone_id, title, problem_statement, code_blocks, correct_order) VALUES
-    -- Game Room 1 (EASY - Board Games)
     (
         'zone_gameroom_1',
         'Sector 1 (Easy): Swap Two Values',
@@ -189,7 +176,6 @@ INSERT INTO quests (zone_id, title, problem_statement, code_blocks, correct_orde
         ]'::jsonb,
         '["b1", "b2", "b3", "b4", "b5"]'::jsonb
     ),
-    -- Game Room 2 (MEDIUM - Foosball & Table Hockey)
     (
         'zone_gameroom_2',
         'Sector 2 (Medium): Find Maximum Score',
@@ -204,7 +190,6 @@ INSERT INTO quests (zone_id, title, problem_statement, code_blocks, correct_orde
         ]'::jsonb,
         '["b1", "b2", "b3", "b4", "b5", "b6"]'::jsonb
     ),
-    -- Game Room 3 (MEDIUM_HARD - Table Tennis)
     (
         'zone_gameroom_3',
         'Sector 3 (Medium-Hard): Binary Search',
@@ -219,7 +204,6 @@ INSERT INTO quests (zone_id, title, problem_statement, code_blocks, correct_orde
         ]'::jsonb,
         '["b1", "b2", "b3", "b4", "b5", "b6"]'::jsonb
     ),
-    -- Game Room 4 (HARD - PlayStation Zone)
     (
         'zone_gameroom_4',
         'Sector 4 (Hard): Worker Pool Dispatcher',
@@ -234,174 +218,59 @@ INSERT INTO quests (zone_id, title, problem_statement, code_blocks, correct_orde
         ]'::jsonb,
         '["b1", "b2", "b3", "b4", "b5", "b6"]'::jsonb
     ),
-
-    -- Meeting Rooms 1..11 Quests
     (
         'zone_meeting_1',
-        'Meeting Room 1: JSON Response Helper',
-        'Order the statements to set the JSON header, write the status code, and encode the response.',
+        'Meeting Room 1 (Easy): Sum Two Numbers',
+        'Arrange the Go function lines in the right order to return the sum of a and b.',
         '[
-            {"id": "b1", "code": "func WriteJSON(w http.ResponseWriter, status int, data any) error {"},
-            {"id": "b2", "code": "    w.Header().Set(\"Content-Type\", \"application/json\")"},
-            {"id": "b3", "code": "    w.WriteHeader(status)"},
-            {"id": "b4", "code": "    return json.NewEncoder(w).Encode(data)"},
-            {"id": "b5", "code": "}"}
+            {"id": "b1", "code": "func Add(a, b int) int {"},
+            {"id": "b2", "code": "    result := a + b"},
+            {"id": "b3", "code": "    return result"},
+            {"id": "b4", "code": "}"}
         ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
-    ),
-    (
-        'zone_meeting_2',
-        'Meeting Room 2: Time Slot Conflict Check',
-        'Arrange the function to check if two meeting intervals overlap.',
-        '[
-            {"id": "b1", "code": "func HasConflict(startA, endA, startB, endB int) bool {"},
-            {"id": "b2", "code": "    if endA <= startB || endB <= startA {"},
-            {"id": "b3", "code": "        return false"},
-            {"id": "b4", "code": "    }"},
-            {"id": "b5", "code": "    return true\n}"}
-        ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
-    ),
-    (
-        'zone_meeting_3',
-        'Meeting Room 3: Stack Push and Pop',
-        'Order the lines to push an item onto a slice stack and pop the last item.',
-        '[
-            {"id": "b1", "code": "stack := []int{10, 20}"},
-            {"id": "b2", "code": "stack = append(stack, 30)"},
-            {"id": "b3", "code": "top := stack[len(stack)-1]"},
-            {"id": "b4", "code": "stack = stack[:len(stack)-1]"},
-            {"id": "b5", "code": "fmt.Println(top)"}
-        ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
-    ),
-    (
-        'zone_meeting_4',
-        'Meeting Room 4: Context Timeout',
-        'Arrange the code to create a timeout context, defer cancel, and ping the database.',
-        '[
-            {"id": "b1", "code": "func PingDB(ctx context.Context, db *sql.DB) error {"},
-            {"id": "b2", "code": "    ctx, cancel := context.WithTimeout(ctx, 3*time.Second)"},
-            {"id": "b3", "code": "    defer cancel()"},
-            {"id": "b4", "code": "    return db.PingContext(ctx)"},
-            {"id": "b5", "code": "}"}
-        ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
+        '["b1", "b2", "b3", "b4"]'::jsonb
     ),
     (
         'zone_meeting_5',
-        'Meeting Room 5: Word Counter',
-        'Order the blocks to count word occurrences in a slice.',
+        'Meeting Room 5 (Easy): Check Positive Number',
+        'Arrange the lines to return true when n is greater than zero.',
         '[
-            {"id": "b1", "code": "counts := make(map[string]int)"},
-            {"id": "b2", "code": "for _, w := range words {"},
-            {"id": "b3", "code": "    counts[w]++"},
-            {"id": "b4", "code": "}"},
-            {"id": "b5", "code": "return counts"}
+            {"id": "b1", "code": "func IsPositive(n int) bool {"},
+            {"id": "b2", "code": "    return n > 0"},
+            {"id": "b3", "code": "}"}
         ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
-    ),
-    (
-        'zone_meeting_6',
-        'Meeting Room 6: Mutex Counter',
-        'Arrange the statements to safely increment a shared counter with a mutex.',
-        '[
-            {"id": "b1", "code": "func (c *Counter) Inc() {"},
-            {"id": "b2", "code": "    c.mu.Lock()"},
-            {"id": "b3", "code": "    defer c.mu.Unlock()"},
-            {"id": "b4", "code": "    c.value++"},
-            {"id": "b5", "code": "}"}
-        ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
-    ),
-    (
-        'zone_meeting_7',
-        'Meeting Room 7: Filter Even Numbers',
-        'Order the blocks to filter even numbers from a slice.',
-        '[
-            {"id": "b1", "code": "var evens []int"},
-            {"id": "b2", "code": "for _, n := range nums {"},
-            {"id": "b3", "code": "    if n%2 == 0 { evens = append(evens, n) }"},
-            {"id": "b4", "code": "}"},
-            {"id": "b5", "code": "return evens"}
-        ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
-    ),
-    (
-        'zone_meeting_8',
-        'Meeting Room 8: Palindrome Check',
-        'Arrange the blocks to check if a string is a palindrome using two pointers.',
-        '[
-            {"id": "b1", "code": "left, right := 0, len(s)-1"},
-            {"id": "b2", "code": "for left < right {"},
-            {"id": "b3", "code": "    if s[left] != s[right] { return false }"},
-            {"id": "b4", "code": "    left++; right--"},
-            {"id": "b5", "code": "}"},
-            {"id": "b6", "code": "return true"}
-        ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5", "b6"]'::jsonb
+        '["b1", "b2", "b3"]'::jsonb
     ),
     (
         'zone_meeting_9',
-        'Meeting Room 9: Reverse a Slice',
-        'Arrange the blocks to reverse an integer slice in place.',
+        'Meeting Room 9 (Easy): Print Greeting',
+        'Order the lines to define a greeting variable and print it.',
         '[
-            {"id": "b1", "code": "func Reverse(s []int) {"},
-            {"id": "b2", "code": "    for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {"},
-            {"id": "b3", "code": "        s[i], s[j] = s[j], s[i]"},
-            {"id": "b4", "code": "    }"},
-            {"id": "b5", "code": "}"}
+            {"id": "b1", "code": "func Greet() {"},
+            {"id": "b2", "code": "    msg := \"Welcome to Xsolla\""},
+            {"id": "b3", "code": "    fmt.Println(msg)"},
+            {"id": "b4", "code": "}"}
         ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
-    ),
-    (
-        'zone_meeting_10',
-        'Meeting Room 10: Sum of Slice',
-        'Arrange the blocks to calculate and return the sum of all integers in a slice.',
-        '[
-            {"id": "b1", "code": "func Sum(nums []int) int {"},
-            {"id": "b2", "code": "    total := 0"},
-            {"id": "b3", "code": "    for _, n := range nums { total += n }"},
-            {"id": "b4", "code": "    return total"},
-            {"id": "b5", "code": "}"}
-        ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
-    ),
-    (
-        'zone_meeting_11',
-        'Meeting Room 11: Nil Slice Check',
-        'Order the statements to return an error if the input slice is empty, or return the first element.',
-        '[
-            {"id": "b1", "code": "func First(items []string) (string, error) {"},
-            {"id": "b2", "code": "    if len(items) == 0 {"},
-            {"id": "b3", "code": "        return \"\", errors.New(\"empty slice\")"},
-            {"id": "b4", "code": "    }"},
-            {"id": "b5", "code": "    return items[0], nil\n}"}
-        ]'::jsonb,
-        '["b1", "b2", "b3", "b4", "b5"]'::jsonb
+        '["b1", "b2", "b3", "b4"]'::jsonb
     );
 
--- ==========================================
--- 3. SEED HOTSPOTS & EASTER EGGS (Matching latest Xsolla.svg)
--- ==========================================
 INSERT INTO hotspots (id, zone_id, category, x_percent, y_percent, title, content) VALUES
-    -- 3 Water Dispensers from Xsolla.svg
     (
         'hotspot_dispenser_1',
         'zone_lecturezone_open_space_1',
         'DISPENSER',
-        42.34,
-        38.05,
+        64.50,
+        56.00,
         'Water Dispenser (School Open Space)',
-        'Filtered cold and ambient water dispenser.'
+        'Filtered cold and ambient water dispenser located next to the core corridor door.'
     ),
     (
         'hotspot_dispenser_2',
         'zone_lecturezone_open_space_1',
         'DISPENSER',
-        62.08,
-        37.78,
-        'Water Dispenser (Corridor)',
+        86.00,
+        54.00,
+        'Water Dispenser (East Corridor)',
         'Filtered cold and ambient water dispenser.'
     ),
     (
@@ -413,8 +282,6 @@ INSERT INTO hotspots (id, zone_id, category, x_percent, y_percent, title, conten
         'Kitchen Water Dispenser',
         'Filtered cold, ambient, and hot water dispenser.'
     ),
-
-    -- Kitchen Equipment
     (
         'hotspot_kitchen_coffee',
         'zone_kitchen',
@@ -433,8 +300,6 @@ INSERT INTO hotspots (id, zone_id, category, x_percent, y_percent, title, conten
         'Refrigerator',
         'Store labeled food containers here. Unlabeled items are cleared on Fridays.'
     ),
-
-    -- 3 Projectors from Xsolla.svg (zone_session, zone_meeting_9, zone_meeting_10)
     (
         'hotspot_projector_1',
         'zone_session',
@@ -449,7 +314,7 @@ INSERT INTO hotspots (id, zone_id, category, x_percent, y_percent, title, conten
         'zone_meeting_9',
         'PROJECTOR',
         49.66,
-        67.40,
+        52.00,
         'Meeting Room 9 Projector',
         'Connect via HDMI or wireless screen sharing.'
     ),
@@ -458,12 +323,10 @@ INSERT INTO hotspots (id, zone_id, category, x_percent, y_percent, title, conten
         'zone_meeting_10',
         'PROJECTOR',
         45.34,
-        67.78,
+        52.00,
         'Meeting Room 10 Projector',
         'Connect via HDMI or wireless screen sharing.'
     ),
-
-    -- Viewpoint
     (
         'hotspot_viewpoint',
         NULL,
@@ -473,8 +336,6 @@ INSERT INTO hotspots (id, zone_id, category, x_percent, y_percent, title, conten
         'Crescent Bay Viewpoint',
         'Panoramic view of Crescent Bay and the Baku skyline from the 31st floor.'
     ),
-
-    -- Hidden Easter Eggs
     (
         'hotspot_egg_gameroom_1',
         'zone_gameroom_1',
