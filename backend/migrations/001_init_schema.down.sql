@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS user_progress;
+DROP TABLE IF EXISTS hotspots;
+DROP TABLE IF EXISTS quests;
+DROP TABLE IF EXISTS zones;
