@@ -53,6 +53,17 @@ go test -v ./...
 | `HTTP_PORT` | `8080` | Port for the HTTP API server |
 | `DATABASE_URL` | `postgres://postgres:12345@localhost:5432/xsolla_explorer?sslmode=disable` | PostgreSQL connection string |
 | `ALLOWED_ORIGIN` | `http://localhost:5173` | CORS allowed origin for the React frontend |
+| `LMS_JWT_SECRET` | *(empty)* | The LMS backend's `JWT_ACCESS_SECRET`. Set it to let students use their LMS sign-in (see below). Empty: everyone is a guest |
+
+## Who is the student? (guest or LMS account)
+
+Every request is tied to one student's progress:
+
+1. **LMS account** — `Authorization: Bearer <LMS access token>`. The token is checked with `LMS_JWT_SECRET` (signature and expiry). Progress is stored under a fixed UUID made from the LMS user id (a version-5 UUID), so it follows the student to any browser and needs no database change. A bad or expired token gets **401**: refresh it with the LMS (`POST /auth/refresh`) or sign in again.
+2. **Guest** — `X-User-ID: <uuid>`, a random ID the frontend keeps per browser (as before).
+3. Neither header — the shared default guest.
+
+Without `LMS_JWT_SECRET` the `Authorization` header is ignored and everyone is a guest, so nothing changes for setups that do not use the LMS.
 
 ## REST API Endpoints
 

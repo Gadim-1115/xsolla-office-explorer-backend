@@ -10,6 +10,7 @@ func NewRouter(
 	explorerHandler *ExplorerHandler,
 	questHandler *QuestHandler,
 	allowedOrigin string,
+	lmsSecret []byte,
 ) http.Handler {
 	mux := http.NewServeMux()
 
@@ -20,6 +21,6 @@ func NewRouter(
 	mux.HandleFunc("GET /api/v1/explorer/quests/{zoneId}", questHandler.GetQuest)
 	mux.HandleFunc("POST /api/v1/explorer/quests/{zoneId}/verify", questHandler.VerifyQuest)
 
-	withIdentity := middleware.StudentIdentity(mux)
+	withIdentity := middleware.StudentIdentity(mux, lmsSecret)
 	return middleware.CORS(allowedOrigin, withIdentity)
 }
