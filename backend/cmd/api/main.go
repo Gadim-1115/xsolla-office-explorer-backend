@@ -36,7 +36,12 @@ func main() {
 
 	explorerHandler := handler.NewExplorerHandler(explorerUC)
 	questHandler := handler.NewQuestHandler(questUC)
-	router := handler.NewRouter(explorerHandler, questHandler, cfg.AllowedOrigin)
+	router := handler.NewRouter(explorerHandler, questHandler, cfg.AllowedOrigin, []byte(cfg.LMSJWTSecret))
+	if cfg.LMSJWTSecret == "" {
+		log.Println("LMS sign-in is off (LMS_JWT_SECRET not set): every visitor is a guest")
+	} else {
+		log.Println("LMS sign-in is on: an LMS access token in Authorization identifies the student")
+	}
 
 	server := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
