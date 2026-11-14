@@ -15,6 +15,7 @@ type StreakRecord struct {
 	UserRole       string  `json:"user_role"`
 	Streak         int     `json:"streak"`
 	LastSolvedDate *string `json:"last_solved_date"`
+	AvatarURL      *string `json:"avatar_url"`
 }
 
 type StreakRepo struct {
@@ -35,8 +36,10 @@ CREATE TABLE IF NOT EXISTS daily_bug_streaks (
 	user_role VARCHAR(64) NOT NULL DEFAULT 'Student',
 	streak INT NOT NULL DEFAULT 0,
 	last_solved_date VARCHAR(16),
+	avatar_url TEXT,
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);`
+);
+ALTER TABLE daily_bug_streaks ADD COLUMN IF NOT EXISTS avatar_url TEXT;`
 	if _, err := r.pool.Exec(ctx, ddl); err != nil {
 		return err
 	}
@@ -87,11 +90,11 @@ func (r *StreakRepo) GetUserStreak(ctx context.Context, userID string) (*StreakR
 	var rec StreakRecord
 	err := r.pool.QueryRow(
 		ctx,
-		`SELECT user_id, user_name, user_role, streak, last_solved_date
+		`SELECT user_id, user_name, user_role, streak, last_solved_date, avatar_url
 		 FROM daily_bug_streaks
 		 WHERE user_id = $1`,
 		userID,
-	).Scan(&rec.UserID, &rec.UserName, &rec.UserRole, &rec.Streak, &rec.LastSolvedDate)
+	).Scan(&rec.UserID, &rec.UserName, &rec.UserRole, &rec.Streak, &rec.LastSolvedDate, &rec.AvatarURL)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return &StreakRecord{
 			UserID:         userID,
@@ -99,6 +102,7 @@ func (r *StreakRepo) GetUserStreak(ctx context.Context, userID string) (*StreakR
 			UserRole:       "Student",
 			Streak:         0,
 			LastSolvedDate: nil,
+			AvatarURL:      nil,
 		}, nil
 	}
 	if err != nil {
@@ -110,13 +114,27 @@ func (r *StreakRepo) GetUserStreak(ctx context.Context, userID string) (*StreakR
 func (r *StreakRepo) CompleteDailyBug(
 	ctx context.Context,
 	userID, userName, userRole, dateKey string,
+	avatarURL *string,
 ) (*StreakRecord, error) {
 	existing, err := r.GetUserStreak(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
+	resolvedAvatar := avatarURL
+	if resolvedAvatar == nil || *resolvedAvatar == "" {
+		resolvedAvatar = existing.AvatarURL
+	}
+
 	if existing.LastSolvedDate != nil && *existing.LastSolvedDate == dateKey {
+		if resolvedAvatar != nil && (existing.AvatarURL == nil || *existing.AvatarURL != *resolvedAvatar) {
+			_, _ = r.pool.Exec(
+				ctx,
+				`UPDATE daily_bug_streaks SET avatar_url = $2, updated_at = NOW() WHERE user_id = $1`,
+				userID, *resolvedAvatar,
+			)
+			existing.AvatarURL = resolvedAvatar
+		}
 		return existing, nil
 	}
 
@@ -138,15 +156,16 @@ func (r *StreakRepo) CompleteDailyBug(
 
 	_, err = r.pool.Exec(
 		ctx,
-		`INSERT INTO daily_bug_streaks (user_id, user_name, user_role, streak, last_solved_date, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, NOW())
+		`INSERT INTO daily_bug_streaks (user_id, user_name, user_role, streak, last_solved_date, avatar_url, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, NOW())
 		 ON CONFLICT (user_id) DO UPDATE
 		 SET user_name = EXCLUDED.user_name,
 		     user_role = EXCLUDED.user_role,
 		     streak = EXCLUDED.streak,
 		     last_solved_date = EXCLUDED.last_solved_date,
+		     avatar_url = COALESCE(EXCLUDED.avatar_url, daily_bug_streaks.avatar_url),
 		     updated_at = NOW()`,
-		userID, userName, userRole, nextStreak, dateKey,
+		userID, userName, userRole, nextStreak, dateKey, resolvedAvatar,
 	)
 	if err != nil {
 		return nil, err
@@ -158,6 +177,7 @@ func (r *StreakRepo) CompleteDailyBug(
 		UserRole:       userRole,
 		Streak:         nextStreak,
 		LastSolvedDate: &dateKey,
+		AvatarURL:      resolvedAvatar,
 	}, nil
 }
 
@@ -167,7 +187,7 @@ func (r *StreakRepo) ListTopStreaks(ctx context.Context, limit int) ([]StreakRec
 	}
 	rows, err := r.pool.Query(
 		ctx,
-		`SELECT user_id, user_name, user_role, streak, last_solved_date
+		`SELECT user_id, user_name, user_role, streak, last_solved_date, avatar_url
 		 FROM daily_bug_streaks
 		 WHERE streak > 0
 		 ORDER BY streak DESC, updated_at DESC
@@ -182,7 +202,14 @@ func (r *StreakRepo) ListTopStreaks(ctx context.Context, limit int) ([]StreakRec
 	var result []StreakRecord
 	for rows.Next() {
 		var rec StreakRecord
-		if err := rows.Scan(&rec.UserID, &rec.UserName, &rec.UserRole, &rec.Streak, &rec.LastSolvedDate); err != nil {
+		if err := rows.Scan(
+			&rec.UserID,
+			&rec.UserName,
+			&rec.UserRole,
+			&rec.Streak,
+			&rec.LastSolvedDate,
+			&rec.AvatarURL,
+		); err != nil {
 			return nil, err
 		}
 		result = append(result, rec)

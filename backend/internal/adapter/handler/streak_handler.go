@@ -20,10 +20,11 @@ func NewStreakHandler(streakRepo *postgres.StreakRepo) *StreakHandler {
 }
 
 type completeStreakRequest struct {
-	UserID   string `json:"user_id"`
-	UserName string `json:"user_name"`
-	UserRole string `json:"user_role"`
-	DateKey  string `json:"date_key"`
+	UserID    string  `json:"user_id"`
+	UserName  string  `json:"user_name"`
+	UserRole  string  `json:"user_role"`
+	DateKey   string  `json:"date_key"`
+	AvatarURL *string `json:"avatar_url"`
 }
 
 func (h *StreakHandler) GetStreak(w http.ResponseWriter, r *http.Request) {
@@ -52,12 +53,21 @@ func (h *StreakHandler) CompleteDailyBug(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	var cleanAvatar *string
+	if req.AvatarURL != nil {
+		trimmed := strings.TrimSpace(*req.AvatarURL)
+		if trimmed != "" {
+			cleanAvatar = &trimmed
+		}
+	}
+
 	rec, err := h.streakRepo.CompleteDailyBug(
 		r.Context(),
 		req.UserID,
 		req.UserName,
 		strings.TrimSpace(req.UserRole),
 		strings.TrimSpace(req.DateKey),
+		cleanAvatar,
 	)
 	if err != nil {
 		middleware.HandleDomainError(w, err)
