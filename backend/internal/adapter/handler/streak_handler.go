@@ -1,0 +1,79 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"strings"
+
+	"github.com/xsolla-school/office-explorer/backend/internal/adapter/handler/dto"
+	"github.com/xsolla-school/office-explorer/backend/internal/adapter/handler/middleware"
+	"github.com/xsolla-school/office-explorer/backend/internal/adapter/storage/postgres"
+	"github.com/xsolla-school/office-explorer/backend/internal/domain"
+)
+
+type StreakHandler struct {
+	streakRepo *postgres.StreakRepo
+}
+
+func NewStreakHandler(streakRepo *postgres.StreakRepo) *StreakHandler {
+	return &StreakHandler{streakRepo: streakRepo}
+}
+
+type completeStreakRequest struct {
+	UserID   string `json:"user_id"`
+	UserName string `json:"user_name"`
+	UserRole string `json:"user_role"`
+	DateKey  string `json:"date_key"`
+}
+
+func (h *StreakHandler) GetStreak(w http.ResponseWriter, r *http.Request) {
+	userID := strings.TrimSpace(r.URL.Query().Get("user_id"))
+	if userID == "" {
+		userID = middleware.GetUserID(r.Context())
+	}
+	rec, err := h.streakRepo.GetUserStreak(r.Context(), userID)
+	if err != nil {
+		middleware.HandleDomainError(w, err)
+		return
+	}
+	dto.WriteSuccess(w, http.StatusOK, rec)
+}
+
+func (h *StreakHandler) CompleteDailyBug(w http.ResponseWriter, r *http.Request) {
+	var req completeStreakRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		middleware.HandleDomainError(w, domain.ErrInvalidInput)
+		return
+	}
+	req.UserID = strings.TrimSpace(req.UserID)
+	req.UserName = strings.TrimSpace(req.UserName)
+	if req.UserID == "" || req.UserName == "" {
+		middleware.HandleDomainError(w, domain.ErrInvalidInput)
+		return
+	}
+
+	rec, err := h.streakRepo.CompleteDailyBug(
+		r.Context(),
+		req.UserID,
+		req.UserName,
+		strings.TrimSpace(req.UserRole),
+		strings.TrimSpace(req.DateKey),
+	)
+	if err != nil {
+		middleware.HandleDomainError(w, err)
+		return
+	}
+	dto.WriteSuccess(w, http.StatusOK, rec)
+}
+
+func (h *StreakHandler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.streakRepo.ListTopStreaks(r.Context(), 10)
+	if err != nil {
+		middleware.HandleDomainError(w, err)
+		return
+	}
+	if rows == nil {
+		rows = []postgres.StreakRecord{}
+	}
+	dto.WriteSuccess(w, http.StatusOK, rows)
+}

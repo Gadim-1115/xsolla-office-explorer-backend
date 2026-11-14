@@ -30,13 +30,15 @@ func main() {
 	zoneRepo := postgres.NewZoneRepo(pool)
 	questRepo := postgres.NewQuestRepo(pool)
 	progressRepo := postgres.NewProgressRepo(pool)
+	streakRepo := postgres.NewStreakRepo(ctx, pool)
 
 	explorerUC := usecase.NewExplorerUseCase(zoneRepo, progressRepo)
 	questUC := usecase.NewQuestUseCase(zoneRepo, questRepo, progressRepo)
 
 	explorerHandler := handler.NewExplorerHandler(explorerUC)
 	questHandler := handler.NewQuestHandler(questUC)
-	router := handler.NewRouter(explorerHandler, questHandler, cfg.AllowedOrigin)
+	streakHandler := handler.NewStreakHandler(streakRepo)
+	router := handler.NewRouter(explorerHandler, questHandler, cfg.AllowedOrigin, streakHandler)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
