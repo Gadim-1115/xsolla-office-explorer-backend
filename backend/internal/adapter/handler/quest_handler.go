@@ -25,7 +25,8 @@ func (h *QuestHandler) GetQuest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	questView, err := h.questUC.GetShuffledQuest(r.Context(), zoneID)
+	mode := r.URL.Query().Get("mode")
+	questView, err := h.questUC.GetShuffledQuestWithMode(r.Context(), zoneID, mode)
 	if err != nil {
 		middleware.HandleDomainError(w, err)
 		return
@@ -36,6 +37,7 @@ func (h *QuestHandler) GetQuest(w http.ResponseWriter, r *http.Request) {
 		ZoneID:           questView.ZoneID,
 		ZoneName:         questView.ZoneName,
 		Difficulty:       questView.Difficulty,
+		Mode:             questView.Mode,
 		Title:            questView.Title,
 		ProblemStatement: questView.ProblemStatement,
 		CodeBlocks:       questView.CodeBlocks,
@@ -64,7 +66,7 @@ func (h *QuestHandler) VerifyQuest(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.GetUserID(r.Context())
 
-	result, err := h.questUC.VerifyQuestSubmission(r.Context(), userID, zoneID, req.SubmittedOrder)
+	result, err := h.questUC.VerifyQuestSubmissionWithMode(r.Context(), userID, zoneID, req.Mode, req.SubmittedOrder)
 	if err != nil {
 		middleware.HandleDomainError(w, err)
 		return

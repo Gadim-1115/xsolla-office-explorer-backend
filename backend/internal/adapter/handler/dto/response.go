@@ -85,6 +85,7 @@ type QuestResponse struct {
 	ZoneID           string             `json:"zone_id"`
 	ZoneName         string             `json:"zone_name"`
 	Difficulty       *entity.Difficulty `json:"difficulty"`
+	Mode             string             `json:"mode"`
 	Title            string             `json:"title"`
 	ProblemStatement string             `json:"problem_statement"`
 	CodeBlocks       []entity.CodeBlock `json:"code_blocks"`

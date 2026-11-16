@@ -13,6 +13,7 @@ type SanitizedQuestView struct {
 	ZoneID           string
 	ZoneName         string
 	Difficulty       *entity.Difficulty
+	Mode             string
 	Title            string
 	ProblemStatement string
 	CodeBlocks       []entity.CodeBlock
@@ -41,13 +42,31 @@ func NewQuestUseCase(
 	}
 }
 
+func (uc *QuestUseCase) resolveQuest(ctx context.Context, zoneID, mode string) (*entity.Quest, string, error) {
+	normalized := NormalizeQuestMode(mode)
+	if normalized == QuestModePuzzle {
+		if puzzle, ok := getPuzzleQuestForZone(zoneID); ok {
+			return &puzzle, QuestModePuzzle, nil
+		}
+	}
+	quest, err := uc.questRepo.GetQuestByZoneID(ctx, zoneID)
+	if err != nil {
+		return nil, "", err
+	}
+	return quest, QuestModeAlgorithm, nil
+}
+
 func (uc *QuestUseCase) GetShuffledQuest(ctx context.Context, zoneID string) (*SanitizedQuestView, error) {
+	return uc.GetShuffledQuestWithMode(ctx, zoneID, QuestModeAlgorithm)
+}
+
+func (uc *QuestUseCase) GetShuffledQuestWithMode(ctx context.Context, zoneID, mode string) (*SanitizedQuestView, error) {
 	zone, err := uc.zoneRepo.GetZoneByID(ctx, zoneID)
 	if err != nil {
 		return nil, err
 	}
 
-	quest, err := uc.questRepo.GetQuestByZoneID(ctx, zoneID)
+	quest, resolvedMode, err := uc.resolveQuest(ctx, zoneID, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +78,7 @@ func (uc *QuestUseCase) GetShuffledQuest(ctx context.Context, zoneID string) (*S
 		ZoneID:           quest.ZoneID,
 		ZoneName:         zone.Name,
 		Difficulty:       zone.Difficulty,
+		Mode:             resolvedMode,
 		Title:            quest.Title,
 		ProblemStatement: quest.ProblemStatement,
 		CodeBlocks:       shuffledBlocks,
@@ -71,6 +91,16 @@ func (uc *QuestUseCase) VerifyQuestSubmission(
 	zoneID string,
 	submittedOrder []string,
 ) (*QuestVerificationResult, error) {
+	return uc.VerifyQuestSubmissionWithMode(ctx, userID, zoneID, QuestModeAlgorithm, submittedOrder)
+}
+
+func (uc *QuestUseCase) VerifyQuestSubmissionWithMode(
+	ctx context.Context,
+	userID string,
+	zoneID string,
+	mode string,
+	submittedOrder []string,
+) (*QuestVerificationResult, error) {
 	if len(submittedOrder) == 0 {
 		return nil, domain.ErrInvalidInput
 	}
@@ -80,7 +110,7 @@ func (uc *QuestUseCase) VerifyQuestSubmission(
 		return nil, err
 	}
 
-	quest, err := uc.questRepo.GetQuestByZoneID(ctx, zoneID)
+	quest, _, err := uc.resolveQuest(ctx, zoneID, mode)
 	if err != nil {
 		return nil, err
 	}

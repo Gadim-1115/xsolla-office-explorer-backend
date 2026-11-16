@@ -15,6 +15,7 @@ func NewRouter(
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/v1/explorer/init", explorerHandler.InitMap)
+	mux.HandleFunc("POST /api/v1/explorer/reset", explorerHandler.ResetSession)
 	mux.HandleFunc("GET /api/v1/explorer/zones/{zoneId}", explorerHandler.GetZoneDetails)
 	mux.HandleFunc("POST /api/v1/explorer/easter-eggs/{hotspotId}/claim", explorerHandler.ClaimEasterEgg)
 
@@ -25,7 +26,9 @@ func NewRouter(
 		sh := streakHandler[0]
 		mux.HandleFunc("GET /api/v1/explorer/streak", sh.GetStreak)
 		mux.HandleFunc("POST /api/v1/explorer/streak/complete", sh.CompleteDailyBug)
+		mux.HandleFunc("DELETE /api/v1/explorer/streak/{userId}", sh.DeleteStreak)
 		mux.HandleFunc("GET /api/v1/explorer/leaderboard", sh.GetLeaderboard)
+		mux.HandleFunc("POST /api/v1/explorer/leaderboard/sync", sh.SyncLeaderboardUsers)
 	}
 
 	withIdentity := middleware.StudentIdentity(mux)

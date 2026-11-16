@@ -156,6 +156,14 @@ func (uc *ExplorerUseCase) GetZoneDetails(ctx context.Context, userID, zoneID st
 	return &view, nil
 }
 
+func (uc *ExplorerUseCase) ResetProgress(ctx context.Context, userID string) (*MapStateResult, error) {
+	fresh := entity.NewUserProgress(userID)
+	if err := uc.progressRepo.SaveProgress(ctx, fresh); err != nil {
+		return nil, err
+	}
+	return uc.InitMapState(ctx, userID)
+}
+
 func (uc *ExplorerUseCase) ClaimEasterEgg(ctx context.Context, userID, hotspotID string) (*ProgressMetrics, error) {
 	hotspot, err := uc.zoneRepo.GetHotspotByID(ctx, hotspotID)
 	if err != nil {

@@ -144,3 +144,51 @@ func TestVerifyQuestSubmission_SuccessAndFailure(t *testing.T) {
 		t.Fatalf("expected 1 unlocked zone, got %d", res.ProgressMetrics.UnlockedZonesCount)
 	}
 }
+
+func TestPuzzleMode_GetAndVerifySuccess(t *testing.T) {
+	easy := entity.DifficultyEasy
+	zoneID := entity.ZoneMeeting9
+
+	zoneRepo := &mockZoneRepo{
+		zones: map[string]entity.Zone{
+			zoneID: {
+				ID:              zoneID,
+				Name:            "Meeting Room 9",
+				IsLockedDefault: true,
+				Difficulty:      &easy,
+				MediaURL:        "/assets/rooms/meeting_9.jpg",
+				Description:     "Presentation meeting room.",
+			},
+		},
+	}
+
+	questRepo := &mockQuestRepo{quests: map[string]entity.Quest{}}
+	progressRepo := &mockProgressRepo{records: make(map[string]*entity.UserProgress)}
+	uc := NewQuestUseCase(zoneRepo, questRepo, progressRepo)
+	ctx := context.Background()
+	userID := "00000000-0000-0000-0000-000000000002"
+
+	view, err := uc.GetShuffledQuestWithMode(ctx, zoneID, QuestModePuzzle)
+	if err != nil {
+		t.Fatalf("expected puzzle quest, got %v", err)
+	}
+	if view.Mode != QuestModePuzzle {
+		t.Fatalf("expected mode puzzle, got %s", view.Mode)
+	}
+	if len(view.CodeBlocks) != 4 {
+		t.Fatalf("expected 4 puzzle blocks, got %d", len(view.CodeBlocks))
+	}
+
+	_, err = uc.VerifyQuestSubmissionWithMode(ctx, userID, zoneID, QuestModePuzzle, []string{"p4", "p3", "p2", "p1"})
+	if !errors.Is(err, domain.ErrInvalidSequence) {
+		t.Fatalf("expected ErrInvalidSequence for wrong puzzle order, got %v", err)
+	}
+
+	res, err := uc.VerifyQuestSubmissionWithMode(ctx, userID, zoneID, QuestModePuzzle, []string{"p1", "p2", "p3", "p4"})
+	if err != nil {
+		t.Fatalf("expected puzzle unlock success, got %v", err)
+	}
+	if res.UnlockedZone.Status != entity.ZoneStatusUnlocked {
+		t.Fatalf("expected UNLOCKED zone, got %s", res.UnlockedZone.Status)
+	}
+}

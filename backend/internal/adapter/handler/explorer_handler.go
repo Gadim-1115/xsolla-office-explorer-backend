@@ -80,3 +80,31 @@ func (h *ExplorerHandler) ClaimEasterEgg(w http.ResponseWriter, r *http.Request)
 
 	dto.WriteSuccess(w, http.StatusOK, dto.ToProgressViewModel(*metrics))
 }
+
+func (h *ExplorerHandler) ResetSession(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+
+	result, err := h.explorerUC.ResetProgress(r.Context(), userID)
+	if err != nil {
+		middleware.HandleDomainError(w, err)
+		return
+	}
+
+	zones := make([]dto.ZoneViewModel, 0, len(result.Zones))
+	for _, z := range result.Zones {
+		zones = append(zones, dto.ToZoneViewModel(z))
+	}
+
+	mapHotspots := make([]dto.HotspotViewModel, 0, len(result.MapHotspots))
+	for _, hs := range result.MapHotspots {
+		mapHotspots = append(mapHotspots, dto.ToHotspotViewModel(hs))
+	}
+
+	resp := dto.InitMapResponse{
+		Zones:       zones,
+		MapHotspots: mapHotspots,
+		Progress:    dto.ToProgressViewModel(result.ProgressMetrics),
+	}
+
+	dto.WriteSuccess(w, http.StatusOK, resp)
+}

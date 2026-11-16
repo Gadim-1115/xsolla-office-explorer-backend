@@ -3,6 +3,7 @@ package dto
 import "github.com/xsolla-school/office-explorer/backend/internal/domain"
 
 type VerifyQuestRequest struct {
+	Mode           string   `json:"mode,omitempty"`
 	SubmittedOrder []string `json:"submitted_order"`
 }
 

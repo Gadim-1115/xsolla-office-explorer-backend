@@ -87,3 +87,56 @@ func (h *StreakHandler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	}
 	dto.WriteSuccess(w, http.StatusOK, rows)
 }
+
+type syncLeaderboardRequest struct {
+	PruneMissing bool                   `json:"prune_missing"`
+	Users        []postgres.LmsSyncUser `json:"users"`
+}
+
+func (h *StreakHandler) SyncLeaderboardUsers(w http.ResponseWriter, r *http.Request) {
+	var req syncLeaderboardRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		middleware.HandleDomainError(w, domain.ErrInvalidInput)
+		return
+	}
+
+	cleaned := make([]postgres.LmsSyncUser, 0, len(req.Users))
+	for _, u := range req.Users {
+		uid := strings.TrimSpace(u.UserID)
+		if uid == "" || !strings.HasPrefix(uid, "lms-") {
+			continue
+		}
+		var avatar *string
+		if u.AvatarURL != nil {
+			trimmed := strings.TrimSpace(*u.AvatarURL)
+			if trimmed != "" {
+				avatar = &trimmed
+			}
+		}
+		cleaned = append(cleaned, postgres.LmsSyncUser{
+			UserID:    uid,
+			UserName:  strings.TrimSpace(u.UserName),
+			UserRole:  strings.TrimSpace(u.UserRole),
+			AvatarURL: avatar,
+		})
+	}
+
+	if err := h.streakRepo.SyncLmsUsers(r.Context(), cleaned, req.PruneMissing); err != nil {
+		middleware.HandleDomainError(w, err)
+		return
+	}
+	dto.WriteSuccess(w, http.StatusOK, map[string]bool{"synced": true})
+}
+
+func (h *StreakHandler) DeleteStreak(w http.ResponseWriter, r *http.Request) {
+	userID := strings.TrimSpace(r.PathValue("userId"))
+	if userID == "" {
+		middleware.HandleDomainError(w, domain.ErrInvalidInput)
+		return
+	}
+	if err := h.streakRepo.DeleteUserStreak(r.Context(), userID); err != nil {
+		middleware.HandleDomainError(w, err)
+		return
+	}
+	dto.WriteSuccess(w, http.StatusOK, map[string]bool{"deleted": true})
+}
