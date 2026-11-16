@@ -39,51 +39,10 @@ CREATE TABLE IF NOT EXISTS daily_bug_streaks (
 	avatar_url TEXT,
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-ALTER TABLE daily_bug_streaks ADD COLUMN IF NOT EXISTS avatar_url TEXT;`
-	if _, err := r.pool.Exec(ctx, ddl); err != nil {
-		return err
-	}
-
-	var count int
-	if err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM daily_bug_streaks`).Scan(&count); err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
-
-	today := time.Now().Format("2006-01-02")
-	yesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
-
-	seeds := []struct {
-		id     string
-		name   string
-		role   string
-		streak int
-		date   string
-	}{
-		{"seed-101", "Leyla Hasanova", "Student", 14, today},
-		{"seed-102", "Murad Guliyev", "Student", 12, today},
-		{"seed-103", "Nigar Ismayilova", "Student", 11, yesterday},
-		{"seed-104", "Tural Karimov", "Student", 9, today},
-		{"seed-111", "Aynur Babayeva", "Student", 8, today},
-		{"seed-112", "Kamran Rzayev", "Student", 7, yesterday},
-		{"seed-113", "Sabina Valiyeva", "Student", 6, today},
-		{"seed-114", "Orkhan Mustafayev", "Student", 5, yesterday},
-		{"seed-115", "Gunel Ahmadova", "Student", 4, today},
-		{"seed-116", "Farid Mammadov", "Student", 3, yesterday},
-	}
-
-	for _, s := range seeds {
-		_, _ = r.pool.Exec(
-			ctx,
-			`INSERT INTO daily_bug_streaks (user_id, user_name, user_role, streak, last_solved_date)
-			 VALUES ($1, $2, $3, $4, $5)
-			 ON CONFLICT (user_id) DO NOTHING`,
-			s.id, s.name, s.role, s.streak, s.date,
-		)
-	}
-	return nil
+ALTER TABLE daily_bug_streaks ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+DELETE FROM daily_bug_streaks WHERE user_id LIKE 'seed-%';`
+	_, err := r.pool.Exec(ctx, ddl)
+	return err
 }
 
 func (r *StreakRepo) GetUserStreak(ctx context.Context, userID string) (*StreakRecord, error) {
@@ -189,7 +148,7 @@ func (r *StreakRepo) ListTopStreaks(ctx context.Context, limit int) ([]StreakRec
 		ctx,
 		`SELECT user_id, user_name, user_role, streak, last_solved_date, avatar_url
 		 FROM daily_bug_streaks
-		 WHERE streak > 0
+		 WHERE streak > 0 AND user_id NOT LIKE 'seed-%'
 		 ORDER BY streak DESC, updated_at DESC
 		 LIMIT $1`,
 		limit,
